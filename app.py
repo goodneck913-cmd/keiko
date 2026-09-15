@@ -1,4 +1,4 @@
-"""PDF 문서 챗봇 UI (F6).
+"""문서 챗봇 UI (F6).
 
 실행:
     .venv/Scripts/python.exe -m streamlit run app.py
@@ -22,6 +22,7 @@ from core.rag import (
     search_context,
     stream_completion,
 )
+from core.loader import UPLOAD_TYPES
 from core.vectorstore import VectorStore, VectorStoreError, clear_storage, storage_exists
 from ingest import ingest_paths
 
@@ -51,7 +52,7 @@ def load_store() -> tuple[VectorStore | None, str | None]:
 
 @st.cache_resource(show_spinner=False)
 def upload_dir() -> Path:
-    """업로드된 PDF를 잠시 두는 곳. 파일명을 보존해야 출처 표기가 맞는다."""
+    """업로드된 문서를 잠시 두는 곳. 파일명을 보존해야 출처 표기가 맞는다."""
     return Path(tempfile.mkdtemp(prefix="pdf-rag-"))
 
 
@@ -79,10 +80,10 @@ def render_sidebar() -> VectorStore | None:
     with st.sidebar:
         st.subheader("문서")
         uploads = st.file_uploader(
-            "PDF 업로드",
-            type="pdf",
+            "문서 업로드",
+            type=UPLOAD_TYPES,
             accept_multiple_files=True,
-            help="여러 개를 한 번에 올릴 수 있습니다.",
+            help="PDF와 엑셀을 여러 개 한 번에 올릴 수 있습니다.",
         )
         if st.button(
             "인덱싱",
@@ -145,7 +146,7 @@ def render_reset_controls(has_index: bool) -> None:
 
     if st.session_state.get("confirm_clear"):
         st.warning(
-            "인덱스를 지우면 PDF를 다시 올려 임베딩해야 합니다. 되돌릴 수 없습니다.",
+            "인덱스를 지우면 문서를 다시 올려 임베딩해야 합니다. 되돌릴 수 없습니다.",
             icon=":material/warning:",
         )
         confirm, cancel = st.columns(2)
@@ -164,7 +165,7 @@ def render_reset_controls(has_index: bool) -> None:
 
 
 def run_indexing(uploads: list) -> None:
-    """업로드된 PDF를 디스크에 옮기고 인덱싱한다 (F1.1, F3.6)."""
+    """업로드된 문서를 디스크에 옮기고 인덱싱한다 (F1.1, F3.6)."""
     target = upload_dir()
     paths: list[str | Path] = []
     for upload in uploads:
@@ -172,7 +173,7 @@ def run_indexing(uploads: list) -> None:
         path.write_bytes(upload.getvalue())
         paths.append(path)
 
-    progress = st.progress(0.0, text="PDF를 읽는 중...")
+    progress = st.progress(0.0, text="문서를 읽는 중...")
 
     def on_progress(done: int, total: int) -> None:
         progress.progress(done / total, text=f"임베딩 {done}/{total}")
@@ -291,7 +292,7 @@ def main() -> None:
 
     if store is None:
         st.info(
-            "왼쪽에서 PDF를 올리고 **인덱싱**을 누르면 질문할 수 있습니다.",
+            "왼쪽에서 문서를 올리고 **인덱싱**을 누르면 질문할 수 있습니다.",
             icon=":material/upload_file:",
         )
 
